@@ -1,0 +1,2 @@
+Tamanho mínimo do conjunto dominante: 14
+Conjunto dominante: ['Belleville', 'Bercy', 'Charles de Gaulle Étoile', 'Châtelet', 'Concorde', 'Denfert-Rochereau', 'Jussieu', 'Marcadet Poissonniers', 'Michel-Ange Molitor', 'Nation', 'Pasteur', 'Pigalle', 'Place d’Italie', 'Stalingrad']

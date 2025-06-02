@@ -1,0 +1,2 @@
+Tamanho do conjunto dominante (aprox): 14
+Conjunto dominante: ['Charles de Gaulle Étoile', 'Châtelet', 'Concorde', 'Denfert-Rochereau', 'Gare d’Austerlitz', "Mairie d'Ivry", 'Mairie de Lilas', 'Marcadet Poissonniers', 'Michel-Ange Molitor', 'Nation', 'Olimpiades', 'Pasteur', 'Saint-Lazare', 'Stalingrad']

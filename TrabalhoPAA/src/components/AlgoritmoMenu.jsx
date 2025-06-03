@@ -17,8 +17,13 @@ export default function AlgoritmoMenu({ onRun }) {
         eventSource.onmessage = (event) => {
             console.log("Received progress update:", event.data);
             const data = JSON.parse(event.data);
-            if (data.progress) {
-                setProgress(data.progress);
+            if (data.progress !== undefined) { // Allow 0 as a valid progress value
+                if (typeof data.progress === 'number') {
+                    setProgress(data.progress);
+                    console.log("Progress bar value:", data.progress);
+                } else {
+                    console.error("Invalid progress data received:", data);
+                }
             }
         };
 

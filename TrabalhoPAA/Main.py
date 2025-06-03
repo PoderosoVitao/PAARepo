@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import time
+import json
 
 class MetroSolver:
     def __init__(self, graph):
@@ -223,6 +224,7 @@ class MetroSolver:
             percent = (start_count / N_start) * 100
             while percent >= next_threshold:
                 print(f"{next_threshold}% completo")
+                self.update_progress(next_threshold)  # Update progress using next_threshold
                 next_threshold += 5
             dfs_branch(start)
 
@@ -476,6 +478,7 @@ class MetroSolver:
     def update_progress(self, new_progress):
         global progress_data
         progress_data["progress"] = new_progress
+        print(f"Progress updated: {progress_data}")
 
 class GraphBuilder:
     @staticmethod
@@ -673,7 +676,8 @@ progress_data = {"progress": 0}
 def progress_updates():
     def generate():
         while True:
-            yield f"data: {progress_data}\n\n"
+            yield f"data: {json.dumps(progress_data)}\n\n"
+            print(f"Streaming progress data: {progress_data}")
             time.sleep(1)
 
     return Response(generate(), content_type='text/event-stream')

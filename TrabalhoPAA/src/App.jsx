@@ -47,6 +47,7 @@ function App() {
   const [lines, setLines] = useState(null);
   const [result, setResult] = useState('');
   const [progress, setProgress] = useState('');
+  const [highlightedEdges, setHighlightedEdges] = useState([]);
 
   const initializeGraph = async () => {
     try {
@@ -66,6 +67,18 @@ function App() {
       });
       setResult(`Resultado: ${JSON.stringify(response.data.result)}\nTempo: ${response.data.elapsed_time}s`);
       setProgress('Execução concluída.');
+
+      // Extract edges from the result and update highlightedEdges
+      const path = response.data.result;
+      console.log('Algorithm result:', path);
+      const edges = path.map((node, index) => {
+        if (index < path.length - 1) {
+          return { source: node, target: path[index + 1] };
+        }
+        return null;
+      }).filter(edge => edge !== null);
+      console.log('Processed highlighted edges:', edges);
+      setHighlightedEdges(edges);
     } catch (error) {
       console.error('Erro ao executar o algoritmo:', error);
       setProgress('Erro durante a execução.');
@@ -136,7 +149,7 @@ function App() {
       {/* Main Content - Graph */}
       <Box sx={{ flexGrow: 1, p: 2, height: '100%', overflow: 'hidden' }}>
         <Paper sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#fafafa' }}>
-          <GraphView stations={stations} lines={lines} />
+          <GraphView stations={stations} lines={lines} highlightedEdges={highlightedEdges} />
         </Paper>
       </Box>
     </Box>

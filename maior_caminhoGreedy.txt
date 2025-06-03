@@ -1,2 +1,0 @@
-Comprimento do trajeto mais longo: 23
-Trajeto: ['Pyramides', 'Châtelet', 'Strasbourg Saint-Denis', 'Barbès Rochechouart', 'Stalingrad', 'Belleville', 'Nation', 'Bercy', 'Place d’Italie', 'Denfert-Rochereau', 'Raspail', 'Montparnasse Bienvenüe', 'Sèvres–Babylone', 'La Motte-Picquet Grenelle', 'Trocadéro', 'Charles de Gaulle Étoile', 'Franklin D. Roosevelt', 'Concorde', 'Madeleine', 'Saint-Lazare', 'Pigalle', 'Marcadet Poissonniers', 'Port de Clignancourt']

@@ -7,21 +7,23 @@ export default function GraphView({ stations, lines, highlightedEdges = [] }) {
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
     const [graphData, setGraphData] = useState({ nodes: [], links: [] });
 
+    // Add logic to dynamically calculate the container size and update ForceGraph2D dimensions
     useEffect(() => {
         const updateDimensions = () => {
             if (containerRef.current) {
+                const { offsetWidth, offsetHeight } = containerRef.current;
                 setDimensions({
-                    width: containerRef.current.offsetWidth,
-                    height: containerRef.current.offsetHeight,
+                    width: offsetWidth,
+                    height: offsetHeight,
                 });
             }
         };
 
-        updateDimensions();
-        window.addEventListener('resize', updateDimensions);
+        updateDimensions(); // Initial update
+        window.addEventListener('resize', updateDimensions); // Update on window resize
 
         return () => {
-            window.removeEventListener('resize', updateDimensions);
+            window.removeEventListener('resize', updateDimensions); // Cleanup on unmount
         };
     }, []);
 
@@ -70,12 +72,12 @@ export default function GraphView({ stations, lines, highlightedEdges = [] }) {
                 linkCanvasObjectMode={(link) => link.highlighted ? 'after' : 'before'} // Render normal edges before highlighted ones
                 linkCanvasObject={(link, ctx, globalScale) => {
                     const isHighlighted = link.highlighted; // Use the highlighted property directly from the graph data
-                    
+
                     if (isHighlighted) {
                         ctx.strokeStyle = 'red';
                         ctx.lineWidth = 1;
                     } else {
-                        
+
                         ctx.strokeStyle = 'gray';
                         ctx.lineWidth = 2;
                     }

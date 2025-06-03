@@ -15,6 +15,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 from matplotlib import pyplot as plt
+from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
+import time
+import json
 
 class MetroSolver:
     def __init__(self, graph):
@@ -80,6 +84,7 @@ class MetroSolver:
             self.greedy_solve_dominating_set()
     
     # algorithmo de força bruta com backtracking
+    # Adicionei logs detalhados para verificar se os nós estão sendo explorados e se o algoritmo está entrando nos loops esperados.
     def bruteForce_solve_longest_path(self, output_file="maior_caminhoBrute.txt"):
         sorted_nodes = sorted(self.graph.nodes(), key=self.graph.degree, reverse=True)
         optimal_path = []
@@ -121,6 +126,7 @@ class MetroSolver:
                 percent = (start_count / N_start) * 100
                 if percent >= threshold:
                     print(f"{threshold}% completo")
+                    self.update_progress(threshold)
                     threshold += 5
         except StopIteration:
             pass
@@ -130,14 +136,6 @@ class MetroSolver:
         print(f"Total de chamadas recursivas: {search_count}")
         return optimal_path, search_count
 
-    def _write_path_result(self, path, filename):
-        if path:
-            with open(filename, "a", encoding="utf-8") as file:
-                file.write(f"Comprimento do trajeto mais longo: {len(path)}\n")
-                file.write(f"Trajeto: {path}\n")
-        else:
-            print("Trajeto Válido não encontrado.")
-    
     def bruteForce_solve_dominating_set(self, min_size=17, max_size=21, output_file="dominantBrute.txt"):
         node_list = sorted(self.graph.nodes, key=self.graph.degree, reverse=True)
         neighborhood_closure = {node: set(self.graph.neighbors(node)) | {node} for node in node_list}
@@ -226,6 +224,7 @@ class MetroSolver:
             percent = (start_count / N_start) * 100
             while percent >= next_threshold:
                 print(f"{next_threshold}% completo")
+                self.update_progress(next_threshold)  # Update progress using next_threshold
                 next_threshold += 5
             dfs_branch(start)
 
@@ -459,6 +458,28 @@ class MetroSolver:
             output.write(f"Caminho simples aproximado com {len(complete_path)} vértices:\n")
             output.write(f"{complete_path}\n")
 
+    def _write_path_result(self, path, filename):
+        if path:
+            with open(filename, "a", encoding="utf-8") as file:
+                file.write(f"Trajeto mais longo com {len(path)} vértices:\n")
+                file.write(f"{path}\n")
+        else:
+            print("Trajeto válido não encontrado.")
+
+    def _serialize_result(self, result):
+        if isinstance(result, set):
+            return list(result)
+        elif isinstance(result, dict):
+            return {key: self._serialize_result(value) for key, value in result.items()}
+        elif isinstance(result, (list, tuple)):
+            return [self._serialize_result(item) for item in result]
+        return result
+
+    def update_progress(self, new_progress):
+        global progress_data
+        progress_data["progress"] = new_progress
+        print(f"Progress updated: {progress_data}")
+
 class GraphBuilder:
     @staticmethod
     def load_station_data(file_path):
@@ -570,10 +591,96 @@ def build_graph(stations, metro_lines):
 def draw_graph(g, out_file="grafo_metro.png", dpi=300):
     GraphVisualizer.render_network(g, out_file, dpi)
 
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+# Inicializa o solver globalmente
+graph = None  # Substitua pelo carregamento do grafo real
+solver = None
+
+@app.route('/initialize', methods=['POST'])
+def initialize():
+    global graph, solver
+    print("/initialize endpoint hit")
+    station_data = read_stations("./estacoes.txt")#request.json.get('stations')
+    line_data = read_lines("./linhas.txt")#request.json.get('lines')
+
+    if not station_data or not line_data:
+        print("Erro: Dados de estações ou linhas estão vazios.")
+        return jsonify({"error": "Dados de estações ou linhas estão vazios."}), 400
+
+    graph = GraphBuilder.construct_network(station_data, line_data)
+    if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
+        print("Erro: Grafo construído está vazio.")
+        return jsonify({"error": "Grafo construído está vazio."}), 400
+
+    solver = MetroSolver(graph)
+    print(f"Grafo inicializado com {graph.number_of_nodes()} nós e {graph.number_of_edges()} arestas.")
+    return jsonify({"message": "Grafo inicializado com sucesso."})
+
+# Adicionei logs detalhados para identificar o ponto exato do erro durante a execução dos algoritmos.
+
+@app.route('/run', methods=['POST'])
+def run_algorithm():
+    global solver
+    if not solver or not solver.graph or solver.graph.number_of_nodes() == 0:
+        print("Erro: Solver não inicializado ou grafo vazio.")
+        return jsonify({"error": "Solver não inicializado ou grafo vazio."}), 400
+
+    data = request.json
+    problem = data.get('problem')
+    algorithm = data.get('algorithm')
+
+    print(f"Recebido problema: {problem}, algoritmo: {algorithm}")
+
+    start_time = time.time()
+    result = None
+
+    try:
+        if algorithm == 'forca_bruta':
+            print("Executando força bruta...")
+            if problem == 'A':
+                result = solver.bruteForce_solve_longest_path()
+            elif problem == 'B':
+                result = solver.bruteForce_solve_dominating_set()
+        elif algorithm == 'branch_and_bound':
+            print("Executando branch and bound...")
+            if problem == 'A':
+                result = solver.branchBound_solve_longest_path()
+            elif problem == 'B':
+                result = solver.branchBound_solve_dominating_set()
+        elif algorithm == 'heuristica':
+            print("Executando heurística...")
+            if problem == 'A':
+                result = solver.greedy_solve_longest_path()
+            elif problem == 'B':
+                result = solver.greedy_solve_dominating_set()
+    except Exception as e:
+        print(f"Erro durante a execução: {e}")
+        return jsonify({"error": str(e)}), 500
+
+    elapsed_time = time.time() - start_time
+
+    print(f"Resultado: {result}, Tempo de execução: {elapsed_time}s")
+
+    serialized_result = solver._serialize_result(result)
+
+    return jsonify({
+        "result": serialized_result,
+        "elapsed_time": elapsed_time
+    })
+
+progress_data = {"progress": 0}
+
+@app.route('/progress-updates', methods=['GET'])
+def progress_updates():
+    def generate():
+        while True:
+            yield f"data: {json.dumps(progress_data)}\n\n"
+            print(f"Streaming progress data: {progress_data}")
+            time.sleep(1)
+
+    return Response(generate(), content_type='text/event-stream')
+
 if __name__ == "__main__":
-    stations = read_stations("./estacoes.txt")
-    metro_lines = read_lines("./linhas.txt")
-    G = build_graph(stations, metro_lines)
-    draw_graph(G)
-    solver = MetroSolver(G)
-    solver.execute_menu()
+    app.run(debug=True)

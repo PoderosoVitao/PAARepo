@@ -12,10 +12,13 @@ export default function GraphView({ stations, lines, highlightedEdges = [] }) {
         const updateDimensions = () => {
             if (containerRef.current) {
                 const { offsetWidth, offsetHeight } = containerRef.current;
+                console.log('Container dimensions:', { width: offsetWidth, height: offsetHeight });
                 setDimensions({
                     width: offsetWidth,
                     height: offsetHeight,
                 });
+            } else {
+                console.warn('Container reference is null. Unable to calculate dimensions.');
             }
         };
 
@@ -59,7 +62,7 @@ export default function GraphView({ stations, lines, highlightedEdges = [] }) {
     }
 
     return (
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+        <div ref={containerRef} style={{ width: '100%', height: '100%', display: 'flex', flexGrow: 1 }}>
             <ForceGraph2D
                 graphData={graphData}
                 nodeLabel={(node) => node.name}
@@ -77,7 +80,6 @@ export default function GraphView({ stations, lines, highlightedEdges = [] }) {
                         ctx.strokeStyle = 'red';
                         ctx.lineWidth = 1;
                     } else {
-
                         ctx.strokeStyle = 'gray';
                         ctx.lineWidth = 2;
                     }
@@ -95,7 +97,7 @@ export default function GraphView({ stations, lines, highlightedEdges = [] }) {
                     ctx.textBaseline = 'middle';
                     ctx.fillText(label, node.x, node.y - 10); // Adjust text position above the vertex marker
 
-                    // Desenha o marcador de vértice (ponto)
+                    // Draw vertex marker (point)
                     ctx.beginPath();
                     ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI, false);
                     ctx.fillStyle = node.color || 'blue';
